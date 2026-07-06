@@ -1,0 +1,158 @@
+"""Figures: the embedding landscape, the archetype quadrants, temporal fill-in,
+and top-pioneer tables. Usage: python scripts/04_visualize.py [local]"""
+from __future__ import annotations
+
+import json
+import sys
+
+import numpy as np
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+from embedd import config as C  # noqa: E402
+from embedd import embed, metric, validate  # noqa: E402
+
+FIELD_COLORS = {
+    "crispr": "#e6194b", "rnai": "#3cb44b", "ipsc": "#4363d8",
+    "optogenetics": "#f58231", "gwas": "#911eb4", "scrnaseq": "#008080",
+    "background": "#cfcfcf",
+}
+
+
+def project_2d(E: np.ndarray) -> np.ndarray:
+    try:
+        import umap
+        reducer = umap.UMAP(n_neighbors=30, min_dist=0.1, metric="cosine",
+                            random_state=42)
+        return reducer.fit_transform(E)
+    except Exception as e:  # noqa: BLE001
+        print(f"umap unavailable ({e}); using PCA", flush=True)
+        from sklearn.decomposition import PCA
+        return PCA(n_components=2, random_state=42).fit_transform(E)
+
+
+def fig_landscape(E2, meta, m, tag):
+    fields = np.array([mm["field"] for mm in meta])
+    founder = np.array([mm["is_founder"] for mm in meta])
+    fig, ax = plt.subplots(figsize=(10, 8))
+    # background first
+    bg = fields == "background"
+    ax.scatter(E2[bg, 0], E2[bg, 1], s=3, c=FIELD_COLORS["background"],
+               alpha=0.4, linewidths=0, label="background")
+    for f, col in FIELD_COLORS.items():
+        if f == "background":
+            continue
+        sel = (fields == f) & ~founder
+        ax.scatter(E2[sel, 0], E2[sel, 1], s=5, c=col, alpha=0.6,
+                   linewidths=0, label=C.FIELDS[f]["label"])
+    fs = founder
+    ax.scatter(E2[fs, 0], E2[fs, 1], s=220, marker="*", c="black",
+               edgecolors="white", linewidths=1.2, zorder=5, label="founders")
+    ax.set_title("Abstract embedding landscape (founders starred)")
+    ax.set_xticks([]); ax.set_yticks([])
+    ax.legend(loc="best", fontsize=8, markerscale=2)
+    fig.tight_layout()
+    fig.savefig(C.FIGURES / f"landscape_{tag}.png", dpi=140)
+    plt.close(fig)
+
+
+def fig_quadrants(m, meta, tag):
+    """Isolation-at-birth vs attributed followership: the archetype map."""
+    iso = m["isolation"]
+    van = np.log1p(m["vanguard"])
+    founder = np.array([mm["is_founder"] for mm in meta])
+    field = np.array([mm["field"] for mm in meta])
+    fig, ax = plt.subplots(figsize=(9, 7))
+    real = field != "background"
+    ax.scatter(iso[real & ~founder], van[real & ~founder], s=6, c="#9aa", alpha=0.4,
+               linewidths=0, label="field abstracts")
+    ax.scatter(iso[field == "background"], van[field == "background"], s=4,
+               c="#e5e5e5", alpha=0.3, linewidths=0, label="background")
+    for i in np.where(founder)[0]:
+        ax.scatter(iso[i], van[i], s=180, marker="*", c=FIELD_COLORS[field[i]],
+                   edgecolors="black", linewidths=0.8, zorder=5)
+    ax.set_xlabel("isolation at birth  (1 - max prior similarity)")
+    ax.set_ylabel("followership  log(1 + vanguard)")
+    ax.set_title("Archetype map: pioneers = isolated at birth AND heavily followed")
+    ax.text(0.98, 0.02, "outliers", ha="right", va="bottom", transform=ax.transAxes,
+            color="#c00", fontsize=9)
+    ax.text(0.02, 0.98, "bandwagon", ha="left", va="top", transform=ax.transAxes,
+            color="#06c", fontsize=9)
+    ax.text(0.98, 0.98, "PIONEERS", ha="right", va="top", transform=ax.transAxes,
+            color="black", fontsize=11, fontweight="bold")
+    ax.legend(loc="lower left", fontsize=8)
+    fig.tight_layout()
+    fig.savefig(C.FIGURES / f"quadrants_{tag}.png", dpi=140)
+    plt.close(fig)
+
+
+def fig_fillin(E, meta, m, tag, tau):
+    """For each field, the count of abstracts per year, with founder years marked —
+    the 'region fills in behind the pioneer' picture."""
+    years = np.array([mm["year"] for mm in meta])
+    field = np.array([mm["field"] for mm in meta])
+    founder = np.array([mm["is_founder"] for mm in meta])
+    fields = [f for f in C.FIELDS]
+    fig, axes = plt.subplots(2, 3, figsize=(15, 8), sharex=True)
+    for ax, f in zip(axes.ravel(), fields):
+        sel = field == f
+        ys = years[sel]
+        yr = np.arange(C.YEAR_MIN, C.YEAR_MAX + 1)
+        counts = [(ys == y).sum() for y in yr]
+        ax.bar(yr, counts, color=FIELD_COLORS[f], alpha=0.7)
+        for i in np.where(sel & founder)[0]:
+            ax.axvline(meta[i]["year"], color="black", ls="--", lw=1)
+        ax.set_title(C.FIELDS[f]["label"], fontsize=10)
+        ax.set_ylabel("abstracts/yr", fontsize=8)
+    fig.suptitle("Temporal fill-in per field (dashed = founder year)")
+    fig.tight_layout()
+    fig.savefig(C.FIGURES / f"fillin_{tag}.png", dpi=140)
+    plt.close(fig)
+
+
+def top_pioneers_table(m, meta, tag, topn=25):
+    order = np.argsort(-m["pioneer"])
+    rows = []
+    for rank, i in enumerate(order[:topn], 1):
+        mm = meta[i]
+        rows.append({
+            "rank": rank, "pioneer": round(float(m["pioneer"][i]), 4),
+            "isolation": round(float(m["isolation"][i]), 3),
+            "vanguard": round(float(m["vanguard"][i]), 1),
+            "n_desc": int(m["n_descendants"][i]),
+            "year": mm["year"], "field": mm["field"],
+            "is_founder": mm["is_founder"], "pmid": mm["pmid"],
+            "title": mm["title"][:80],
+        })
+    with (C.RESULTS / f"top_pioneers_{tag}.json").open("w") as fh:
+        json.dump(rows, fh, indent=2)
+    print(f"\n=== top {topn} pioneers (corpus-wide, {tag}) ===")
+    for r in rows:
+        flag = " *FOUNDER*" if r["is_founder"] else ""
+        print(f"  {r['rank']:2d}. [{r['field']:11s} {r['year']}] "
+              f"P={r['pioneer']:.3f} desc={r['n_desc']:4d}{flag}  {r['title'][:60]}")
+    return rows
+
+
+def main(tag="local"):
+    E, meta = embed.load_embeddings(tag)
+    years = np.array([mm["year"] for mm in meta])
+    cal = validate.calibrate_tau(E, meta)
+    lo, hi = cal["cross_field_p90"], cal["same_field_p25"]
+    tau = float(np.clip((lo + hi) / 2, 0.5, 0.85)) if hi > lo else 0.7
+    print(f"tau={tau:.3f}  calibration={cal}")
+    m = metric.compute_metrics(E, years, tau=tau)
+
+    top_pioneers_table(m, meta, tag)
+    print("projecting to 2D ...", flush=True)
+    E2 = project_2d(E)
+    fig_landscape(E2, meta, m, tag)
+    fig_quadrants(m, meta, tag)
+    fig_fillin(E, meta, m, tag, tau)
+    print(f"figures -> {C.FIGURES}")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1] if len(sys.argv) > 1 else "local")

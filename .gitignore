@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+data/raw/*.jsonl
+data/embeddings/*.npy
+data/embeddings/*.jsonl
+data/embeddings/*.json
+results/*.log
+results/metrics_*.jsonl
+.DS_Store
