@@ -1,0 +1,35 @@
+{
+  "warmup_1": {
+    "n": 21492,
+    "n_pos": 2151,
+    "per_feature_auc": {
+      "isolation": 0.609,
+      "prior_density": 0.061,
+      "early_crowd": 0.163,
+      "early_growth": 0.2,
+      "early_acceleration": 0.617
+    }
+  },
+  "warmup_2": {
+    "n": 21351,
+    "n_pos": 2137,
+    "per_feature_auc": {
+      "isolation": 0.618,
+      "prior_density": 0.058,
+      "early_crowd": 0.164,
+      "early_growth": 0.197,
+      "early_acceleration": 0.672
+    }
+  },
+  "warmup_3": {
+    "n": 21187,
+    "n_pos": 2120,
+    "per_feature_auc": {
+      "isolation": 0.629,
+      "prior_density": 0.054,
+      "early_crowd": 0.17,
+      "early_growth": 0.203,
+      "early_acceleration": 0.723
+    }
+  }
+}

@@ -114,6 +114,98 @@ def early_features_and_labels(H, year_axis, isolation, years,
             "y_top": y_top, "idx": idx}
 
 
+def features_as_of(H, year_axis, isolation, years, meta, D: int,
+                   min_pub: int, max_pub: int, field_only: bool = False,
+                   top_frac: float = 0.10):
+    """'Standing in year D' forecast setup with no leakage.
+
+    For each paper published in [min_pub, max_pub] (all with pub <= D), compute
+    features from abstracts up to and including year D, and the label from
+    abstracts published strictly after D. This is a genuine forecast: predict the
+    future (>D) from the present (<=D).
+    """
+    yr_to_k = {int(y): k for k, y in enumerate(year_axis)}
+    kD = yr_to_k[D]
+    feats, late, idx = [], [], []
+    for i in range(len(years)):
+        t = int(years[i])
+        if t < min_pub or t > max_pub or t > D:
+            continue
+        if field_only and meta[i]["field"] == "background":
+            continue
+        kt = yr_to_k[t]
+        prior = float(H[i, :kt].sum())               # neighbors before publication
+        early = float(H[i, kt:kD + 1].sum())         # neighbors from pub..D (current size)
+        growth = float(H[i, kt + 1:kD + 1].sum())    # neighbors accrued after pub, by D
+        late_ct = float(H[i, kD + 1:].sum())         # FUTURE neighbors (label)
+        feats.append([
+            isolation[i], prior, early, growth,
+            growth / (early + 1.0),        # early acceleration
+            float(D - t),                  # age at decision (control)
+        ])
+        late.append(late_ct)
+        idx.append(i)
+    X = np.array(feats, dtype=np.float32)
+    late = np.array(late, dtype=np.float32)
+    idx = np.array(idx)
+    names = ["isolation", "prior_density", "current_size", "growth",
+             "acceleration", "age"]
+    if len(late):
+        thr = np.quantile(late, 1 - top_frac)
+        y_top = (late >= max(thr, 1)).astype(int)
+    else:
+        y_top = np.array([], dtype=int)
+    return {"X": X, "feat_names": names, "y_follow": late, "y_top": y_top,
+            "idx": idx, "D": D}
+
+
+def evaluate_asof(data: dict, seed: int = 0):
+    """Cross-validated AUC: full model vs a size-only baseline, plus the key
+    test -- does the metric predict who OUTGROWS their current size?"""
+    from sklearn.linear_model import LogisticRegression, LinearRegression
+    from sklearn.metrics import roc_auc_score
+    from sklearn.model_selection import cross_val_predict
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.pipeline import make_pipeline
+
+    X, y, names = data["X"], data["y_top"], data["feat_names"]
+    out = {"D": data["D"], "n": int(len(y)), "n_pos": int(y.sum()),
+           "base_rate": round(float(y.mean()), 4) if len(y) else None}
+    if y.sum() < 10 or y.sum() > len(y) - 10:
+        out["note"] = "too few positives/negatives"
+        return out
+
+    for c, name in enumerate(names):
+        s = X[:, c]
+        auc = roc_auc_score(y, s)
+        out.setdefault("per_feature_auc", {})[name] = round(float(max(auc, 1 - auc)), 3)
+
+    def cv_auc(cols):
+        clf = make_pipeline(StandardScaler(),
+                            LogisticRegression(max_iter=2000, class_weight="balanced"))
+        p = cross_val_predict(clf, X[:, cols], y, cv=5, method="predict_proba")[:, 1]
+        return round(float(roc_auc_score(y, p)), 3)
+
+    size_col = [names.index("current_size"), names.index("age")]
+    all_cols = list(range(len(names)))
+    out["auc_size_baseline"] = cv_auc(size_col)
+    out["auc_full_model"] = cv_auc(all_cols)
+
+    # residual test: regress late-followers on current_size+age, ask whether
+    # isolation/acceleration predict who beats that expectation.
+    from sklearn.metrics import roc_auc_score as _auc
+    late = data["y_follow"]
+    base = LinearRegression().fit(
+        np.log1p(X[:, size_col]), np.log1p(late))
+    resid = np.log1p(late) - base.predict(np.log1p(X[:, size_col]))
+    over = (resid >= np.quantile(resid, 1 - 0.10)).astype(int)
+    for name in ("isolation", "acceleration"):
+        c = names.index(name)
+        a = _auc(over, X[:, c])
+        out.setdefault("residual_auc", {})[name] = round(float(max(a, 1 - a)), 3)
+    return out
+
+
 def evaluate_prediction(data: dict, seed: int = 0):
     """Time-agnostic AUC of each early feature alone, plus a simple combined
     logistic model under a temporal split (train older half, test newer half)."""

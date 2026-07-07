@@ -1,0 +1,144 @@
+{
+  "tau": 0.85,
+  "calibration": {
+    "same_field_median": 0.9306231737136841,
+    "same_field_p25": 0.9175667464733124,
+    "cross_field_median": 0.8829213380813599,
+    "cross_field_p90": 0.9120365858078003,
+    "n_same": 1070,
+    "n_cross": 2513
+  },
+  "comparison": {
+    "pioneer": {
+      "mean_percentile": 94.01,
+      "min_percentile": 87.73,
+      "n_founders": 11
+    },
+    "isolation_only": {
+      "mean_percentile": 38.28,
+      "min_percentile": 2.44,
+      "n_founders": 11
+    },
+    "future_count": {
+      "mean_percentile": 92.8,
+      "min_percentile": 79.28,
+      "n_founders": 11
+    },
+    "vanguard": {
+      "mean_percentile": 94.01,
+      "min_percentile": 87.73,
+      "n_founders": 11
+    },
+    "n_descendants": {
+      "mean_percentile": 94.01,
+      "min_percentile": 87.73,
+      "n_founders": 11
+    },
+    "prior_count_inv": {
+      "mean_percentile": 92.48,
+      "min_percentile": 82.63,
+      "n_founders": 11
+    }
+  },
+  "founders": [
+    {
+      "field": "crispr",
+      "pmid": "22745249",
+      "desc": "Jinek 2012 Science - programmable dual-RNA guided DNA endonuclease",
+      "found": true,
+      "rank": 258,
+      "n_field": 2747,
+      "percentile": 90.64
+    },
+    {
+      "field": "crispr",
+      "pmid": "23287718",
+      "desc": "Cong 2013 Science - multiplex genome engineering CRISPR/Cas",
+      "found": true,
+      "rank": 337,
+      "n_field": 2747,
+      "percentile": 87.76
+    },
+    {
+      "field": "crispr",
+      "pmid": "23287722",
+      "desc": "Mali 2013 Science - RNA-guided human genome engineering",
+      "found": true,
+      "rank": 338,
+      "n_field": 2747,
+      "percentile": 87.73
+    },
+    {
+      "field": "rnai",
+      "pmid": "9486653",
+      "desc": "Fire & Mello 1998 Nature - potent gene silencing by dsRNA in C. elegans",
+      "found": true,
+      "rank": 60,
+      "n_field": 2571,
+      "percentile": 97.7
+    },
+    {
+      "field": "rnai",
+      "pmid": "11373684",
+      "desc": "Elbashir 2001 Nature - 21nt siRNA duplexes silence in mammalian cells",
+      "found": true,
+      "rank": 224,
+      "n_field": 2571,
+      "percentile": 91.32
+    },
+    {
+      "field": "ipsc",
+      "pmid": "16904174",
+      "desc": "Takahashi & Yamanaka 2006 Cell - iPSC from mouse fibroblasts",
+      "found": true,
+      "rank": 38,
+      "n_field": 2766,
+      "percentile": 98.66
+    },
+    {
+      "field": "ipsc",
+      "pmid": "18035408",
+      "desc": "Takahashi 2007 Cell - iPSC from adult human fibroblasts",
+      "found": true,
+      "rank": 72,
+      "n_field": 2766,
+      "percentile": 97.43
+    },
+    {
+      "field": "optogenetics",
+      "pmid": "16116447",
+      "desc": "Boyden 2005 Nat Neurosci - millisecond optical control of neural activity",
+      "found": true,
+      "rank": 82,
+      "n_field": 2534,
+      "percentile": 96.8
+    },
+    {
+      "field": "gwas",
+      "pmid": "17554300",
+      "desc": "WTCCC 2007 Nature - 14,000 cases of 7 diseases, 3,000 controls",
+      "found": true,
+      "rank": 240,
+      "n_field": 2584,
+      "percentile": 90.75
+    },
+    {
+      "field": "scrnaseq",
+      "pmid": "19349980",
+      "desc": "Tang 2009 Nat Methods - mRNA-seq of a single cell",
+      "found": true,
+      "rank": 13,
+      "n_field": 2647,
+      "percentile": 99.55
+    },
+    {
+      "field": "scrnaseq",
+      "pmid": "25700174",
+      "desc": "Macosko 2015 Cell - Drop-seq highly parallel single-cell",
+      "found": true,
+      "rank": 113,
+      "n_field": 2647,
+      "percentile": 95.77
+    }
+  ]
+}
