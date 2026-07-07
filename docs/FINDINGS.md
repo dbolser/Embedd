@@ -47,6 +47,22 @@ confounded ("precedence ≈ published early"). So:
   (0.64–0.70) are the predictors. **This is the real result: citation-free early
   detection of foundational work, on unbiased data.**
 
+## The reckoning, tested against real citations (iCite RCR)
+Spearman(precedence, RCR) is only **+0.13 to +0.23** within field — precedence is
+**not a citation proxy**. The two divergence quadrants:
+- **Bandwagon (high cites, low precedence) — works well.** Dominated by *tools,
+  resources, databases*: NHGRI GWAS Catalog (2089 cites), CHOPCHOP CRISPR
+  toolbox, MAGeCK software. Massive citation utility, but they arrived *after*
+  the conceptual foundation. Precedence cleanly separates conceptual leaders
+  from infrastructure.
+- **Overlooked (high precedence, low cites) — does NOT work.** Surfaces
+  early-but-minor papers (guidelines, non-English reviews, incremental early
+  work with 1–3 citations), not wronged giants. Being early in embedding space
+  doesn't imply hidden importance; precedence has no quality signal to tell
+  "early and important" from "early and forgettable". Honest negative result —
+  the "recognise the overlooked pioneer" half of the reckoning needs more than
+  this.
+
 ## Honest limitations
 - As-of forecasting of raw followership is ~0.9 AUC but mostly *momentum* (a
   size-only baseline already ~0.9); the non-trivial lift is the nascent test.

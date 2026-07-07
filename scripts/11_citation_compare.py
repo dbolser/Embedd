@@ -51,7 +51,12 @@ def main(tag="local"):
         rho, _ = spearmanr(pioneer[sel], rcr[sel])
         print(f"{f:12s} n={len(sel):4d}  spearman(pioneer, RCR)={rho:+.3f}")
         gap = pp - rp
-        for k in np.argsort(-gap)[:3]:
+        # Overlooked pioneers must LEAD a substantial region (not just be an
+        # early minor paper): gate on region size >= field median.
+        region = m["region_size"][sel]
+        big = region >= np.median(region)
+        og = np.where(big, gap, -np.inf)
+        for k in np.argsort(-og)[:3]:
             i = sel[k]
             overlooked.append((gap[k], f, meta[i], pp[k], rp[k], int(cites[i]),
                                float(rcr[i])))

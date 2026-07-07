@@ -109,7 +109,17 @@ founders embedded among 39k random abstracts (combined N≈55k), their mean
 corpus-wide percentile is **99.3** (Yamanaka iPSC #1–2 of all 55k), so precedence
 does not merely re-sort a hand-picked field.
 
-### 5.5 Concept relations (exploratory)
+### 5.5 Versus citations (iCite RCR)
+Within-field Spearman(precedence, RCR) is only +0.13–0.23: precedence is not a
+citation proxy. The high-citation / low-precedence quadrant is dominated by
+tools, resources and databases (GWAS Catalog, CRISPR toolboxes, screening
+software) — citation-heavy infrastructure that post-dates the conceptual
+foundation. The converse quadrant (high precedence, low citations) does *not*
+reliably surface overlooked pioneers — it returns early-but-minor papers, since
+precedence carries no quality signal. So the metric separates conceptual leaders
+from bandwagon infrastructure, but cannot by itself rehabilitate the forgotten.
+
+### 5.6 Concept relations (exploratory)
 Clustering (UMAP+HDBSCAN, centered space) is interpretable; GWAS spontaneously
 fragments into disease-specific sub-clusters sharing a genome-wide-association
 signature. Relation-vector clustering on six deep verticals mostly recovers
