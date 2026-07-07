@@ -59,32 +59,59 @@ def fig_landscape(E2, meta, m, tag):
 
 
 def fig_quadrants(m, meta, tag):
-    """Isolation-at-birth vs attributed followership: the archetype map."""
-    iso = m["isolation"]
-    van = np.log1p(m["vanguard"])
+    """Archetype map: temporal precedence vs region size. Pioneers are top-right
+    (a large region that arrives mostly after them); bandwagon work is bottom
+    (low precedence); tiny corners are left."""
+    prec = m["precedence"]
+    size = np.log1p(m["region_size"].astype(float))
     founder = np.array([mm["is_founder"] for mm in meta])
     field = np.array([mm["field"] for mm in meta])
     fig, ax = plt.subplots(figsize=(9, 7))
-    real = field != "background"
-    ax.scatter(iso[real & ~founder], van[real & ~founder], s=6, c="#9aa", alpha=0.4,
-               linewidths=0, label="field abstracts")
-    ax.scatter(iso[field == "background"], van[field == "background"], s=4,
-               c="#e5e5e5", alpha=0.3, linewidths=0, label="background")
+    real = ~np.isin(field, ["background", "random"])
+    ax.scatter(prec[real & ~founder], size[real & ~founder], s=6, c="#9aa",
+               alpha=0.4, linewidths=0, label="field abstracts")
+    other = np.isin(field, ["background", "random"])
+    ax.scatter(prec[other], size[other], s=4, c="#e5e5e5", alpha=0.3,
+               linewidths=0, label="background/random")
     for i in np.where(founder)[0]:
-        ax.scatter(iso[i], van[i], s=180, marker="*", c=FIELD_COLORS[field[i]],
+        ax.scatter(prec[i], size[i], s=180, marker="*",
+                   c=FIELD_COLORS.get(field[i], "#000"),
                    edgecolors="black", linewidths=0.8, zorder=5)
-    ax.set_xlabel("isolation at birth  (1 - max prior similarity)")
-    ax.set_ylabel("followership  log(1 + vanguard)")
-    ax.set_title("Archetype map: pioneers = isolated at birth AND heavily followed")
-    ax.text(0.98, 0.02, "outliers", ha="right", va="bottom", transform=ax.transAxes,
-            color="#c00", fontsize=9)
-    ax.text(0.02, 0.98, "bandwagon", ha="left", va="top", transform=ax.transAxes,
-            color="#06c", fontsize=9)
+    ax.set_xlabel("temporal precedence  (fraction of region published after)")
+    ax.set_ylabel("region size  log(1 + neighbors)")
+    ax.set_title("Archetype map: pioneers lead a large region that fills in behind them")
     ax.text(0.98, 0.98, "PIONEERS", ha="right", va="top", transform=ax.transAxes,
             color="black", fontsize=11, fontweight="bold")
-    ax.legend(loc="lower left", fontsize=8)
+    ax.text(0.02, 0.98, "derivative in\na big field", ha="left", va="top",
+            transform=ax.transAxes, color="#06c", fontsize=9)
+    ax.legend(loc="lower right", fontsize=8)
     fig.tight_layout()
     fig.savefig(C.FIGURES / f"quadrants_{tag}.png", dpi=140)
+    plt.close(fig)
+
+
+def fig_precedence_year(m, meta, tag):
+    """Precedence vs publication year; founders starred. Shows founders combine
+    early dates with high precedence."""
+    prec = m["precedence"]
+    years = np.array([mm["year"] for mm in meta])
+    founder = np.array([mm["is_founder"] for mm in meta])
+    field = np.array([mm["field"] for mm in meta])
+    real = ~np.isin(field, ["background", "random"])
+    fig, ax = plt.subplots(figsize=(10, 6))
+    jitter = ((np.arange(len(years)) % 7) - 3) / 12.0
+    ax.scatter(years[real & ~founder] + jitter[real & ~founder], prec[real & ~founder],
+               s=5, c="#bbb", alpha=0.4, linewidths=0)
+    for i in np.where(founder)[0]:
+        ax.scatter(years[i], prec[i], s=170, marker="*",
+                   c=FIELD_COLORS.get(field[i], "#000"), edgecolors="black",
+                   linewidths=0.8, zorder=5)
+        ax.annotate(field[i], (years[i], prec[i]), fontsize=7,
+                    xytext=(3, 3), textcoords="offset points")
+    ax.set_xlabel("publication year"); ax.set_ylabel("temporal precedence")
+    ax.set_title("Founders combine early dates with future-facing neighborhoods")
+    fig.tight_layout()
+    fig.savefig(C.FIGURES / f"precedence_year_{tag}.png", dpi=140)
     plt.close(fig)
 
 
@@ -155,6 +182,7 @@ def main(tag="local"):
     E2 = project_2d(E)
     fig_landscape(E2, meta, m, tag)
     fig_quadrants(m, meta, tag)
+    fig_precedence_year(m, meta, tag)
     fig_fillin(E, meta, m, tag, tau)
     print(f"figures -> {C.FIGURES}")
 
