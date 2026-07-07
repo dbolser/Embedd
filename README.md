@@ -1,5 +1,7 @@
 # Embedd — a citation-free novelty metric for the scientific literature
 
+> 📄 **[Read the plain-language summary →](https://dbolser.github.io/Embedd/)**
+
 **Question.** When a new paper lands in the embedding space of all prior work,
 does it fall inside an existing region of ideas, or does it stake out empty
 ground that later work rushes to fill? The second kind of paper *led the way*.
