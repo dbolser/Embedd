@@ -2,9 +2,10 @@
 __pycache__/
 *.pyc
 data/raw/*.jsonl
-data/embeddings/*.npy
-data/embeddings/*.jsonl
-data/embeddings/*.json
+data/raw_broad/
+data/**/*.jsonl
+data/embeddings/
+*.memmap
 results/*.log
 results/metrics_*.jsonl
 .DS_Store
