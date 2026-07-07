@@ -18,7 +18,7 @@ from . import config as C
 ICITE_URL = "https://icite.od.nih.gov/api/pubs"
 
 
-def fetch_icite(pmids: list[str], batch: int = 800) -> dict[str, dict]:
+def fetch_icite(pmids: list[str], batch: int = 200) -> dict[str, dict]:
     out: dict[str, dict] = {}
     for i in range(0, len(pmids), batch):
         chunk = pmids[i : i + batch]
