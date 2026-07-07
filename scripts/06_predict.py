@@ -12,12 +12,10 @@ from embedd import embed, predict, validate
 
 
 def main(tag="local"):
-    E, meta = embed.load_embeddings(tag)
+    E, meta = embed.load_clean(tag)
     years = np.array([m["year"] for m in meta])
-    cal = validate.calibrate_tau(E, meta)
-    lo, hi = cal["cross_field_p90"], cal["same_field_p25"]
-    tau = float(np.clip((lo + hi) / 2, 0.5, 0.85)) if hi > lo else 0.7
-    print(f"tau={tau:.3f}")
+    tau = validate.choose_tau(E, target_median=25)
+    print(f"tau={tau} (mean-centered)")
 
     H, year_axis, isolation = predict.neighbor_year_hist(E, years, tau=tau)
 

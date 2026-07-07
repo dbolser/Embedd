@@ -35,7 +35,7 @@ def fig_concept_map(Z2, labels, clusters, tag):
 
 
 def main(tag="local"):
-    E, meta = embed.load_embeddings(tag)
+    E, meta = embed.load_clean(tag)
     print(f"loaded {E.shape}")
     labels, Z = concepts.cluster_concepts(E)
     n_clusters = len(set(labels)) - (1 if -1 in labels else 0)

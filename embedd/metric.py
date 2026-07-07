@@ -113,10 +113,14 @@ def compute_metrics(
             n_descendants[best] += 1
 
     is_seed = prior_count == 0
+    total = birth_count + future_count               # all within-tau neighbors
+    precedence = future_count / (total + 1.0)         # fraction arriving later
     out = {
         "prior_count": prior_count,
         "birth_count": birth_count,
         "future_count": future_count,
+        "region_size": total,
+        "precedence": precedence.astype(np.float32),
         "isolation": isolation,
         "nearest_prior_yr": nearest_prior_yr,
         "vanguard": vanguard.astype(np.float32),
@@ -128,17 +132,21 @@ def compute_metrics(
 
 
 def pioneer_score(m: dict[str, np.ndarray]) -> np.ndarray:
-    """Combine birth-isolation and attributed followership into one score.
+    """Temporal-precedence leadership score.
 
-    A pioneer is isolated at birth AND heavily followed. We multiply a
-    saturating followership term by an isolation gate so that neither pure
-    outliers (no followers) nor bandwagon work (no isolation) score highly.
+    Empirically, founding papers are NOT isolated in embedding space -- they sit
+    among contemporaries -- and winner-take-all ancestor credit rewards the
+    oldest tangential paper, not the pioneer. What separates founders is
+    temporal precedence: their semantic neighborhood arrives mostly *after* them.
+    We score a paper by how future-facing its neighborhood is (precedence),
+    weighted by how substantial that neighborhood ultimately becomes (log size),
+    so being merely early in an empty corner does not outweigh leading a field.
+
+    Note: within a keyword-selected field this is confounded (any early paper in
+    an exploding field scores high); the honest test is the as-of-year forecast
+    on an outcome-blind corpus (see embedd/predict.py).
     """
-    isolation = m["isolation"].astype(np.float64)
-    vanguard = m["vanguard"].astype(np.float64)
-    # saturating followership (log) keeps a few mega-hubs from dominating
-    follow = np.log1p(vanguard)
-    follow = follow / (follow.max() + 1e-12)
-    # isolation gate in [0,1]; emphasize genuinely isolated births
-    gate = isolation ** 2
-    return (follow * gate).astype(np.float32)
+    precedence = m["precedence"].astype(np.float64)
+    size = np.log1p(m["region_size"].astype(np.float64))
+    size = size / (size.max() + 1e-12)
+    return (precedence * size).astype(np.float32)

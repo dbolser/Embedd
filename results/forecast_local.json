@@ -1,0 +1,96 @@
+{
+  "tag": "local",
+  "N": 15873,
+  "tau": 0.5432,
+  "asof": {
+    "2011": {
+      "D": 2011,
+      "n": 3230,
+      "n_pos": 324,
+      "base_rate": 0.1003,
+      "per_feature_auc": {
+        "isolation": 0.794,
+        "prior_density": 0.859,
+        "current_size": 0.926,
+        "growth": 0.727,
+        "acceleration": 0.563,
+        "age": 0.537
+      },
+      "auc_size_baseline": 0.944,
+      "auc_full_model": 0.941,
+      "residual_auc": {
+        "isolation": 0.558,
+        "acceleration": 0.532
+      }
+    },
+    "2013": {
+      "D": 2013,
+      "n": 4268,
+      "n_pos": 436,
+      "base_rate": 0.1022,
+      "per_feature_auc": {
+        "isolation": 0.801,
+        "prior_density": 0.828,
+        "current_size": 0.909,
+        "growth": 0.692,
+        "acceleration": 0.556,
+        "age": 0.522
+      },
+      "auc_size_baseline": 0.947,
+      "auc_full_model": 0.941,
+      "residual_auc": {
+        "isolation": 0.527,
+        "acceleration": 0.583
+      }
+    },
+    "2015": {
+      "D": 2015,
+      "n": 4695,
+      "n_pos": 475,
+      "base_rate": 0.1012,
+      "per_feature_auc": {
+        "isolation": 0.719,
+        "prior_density": 0.678,
+        "current_size": 0.866,
+        "growth": 0.645,
+        "acceleration": 0.57,
+        "age": 0.627
+      },
+      "auc_size_baseline": 0.854,
+      "auc_full_model": 0.915,
+      "residual_auc": {
+        "isolation": 0.678,
+        "acceleration": 0.618
+      }
+    }
+  },
+  "nascent": {
+    "2011": {
+      "n_nascent": 1650,
+      "n_pos": 166,
+      "iso": 0.661,
+      "prior_density": 0.684,
+      "growth": 0.549,
+      "acceleration": 0.561,
+      "combined_geom": 0.652
+    },
+    "2013": {
+      "n_nascent": 2214,
+      "n_pos": 240,
+      "iso": 0.655,
+      "prior_density": 0.61,
+      "growth": 0.601,
+      "acceleration": 0.613,
+      "combined_geom": 0.616
+    },
+    "2015": {
+      "n_nascent": 2426,
+      "n_pos": 288,
+      "iso": 0.655,
+      "prior_density": 0.668,
+      "growth": 0.549,
+      "acceleration": 0.564,
+      "combined_geom": 0.667
+    }
+  }
+}

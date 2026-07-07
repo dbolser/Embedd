@@ -113,7 +113,14 @@ def fig_fillin(E, meta, m, tag, tau):
 
 
 def top_pioneers_table(m, meta, tag, topn=25):
-    order = np.argsort(-m["pioneer"])
+    # Boundary censoring: papers within BOUNDARY years of the window start have
+    # no observable prior context (artificially isolated) and become spurious
+    # ancestors of everything after them; drop them from the ranking.
+    boundary = 3
+    years = np.array([mm["year"] for mm in meta])
+    scoreable = (years >= C.YEAR_MIN + boundary) & (years <= C.YEAR_MAX - 1)
+    score = np.where(scoreable, m["pioneer"], -np.inf)
+    order = np.argsort(-score)
     rows = []
     for rank, i in enumerate(order[:topn], 1):
         mm = meta[i]
@@ -137,12 +144,10 @@ def top_pioneers_table(m, meta, tag, topn=25):
 
 
 def main(tag="local"):
-    E, meta = embed.load_embeddings(tag)
+    E, meta = embed.load_clean(tag)
     years = np.array([mm["year"] for mm in meta])
-    cal = validate.calibrate_tau(E, meta)
-    lo, hi = cal["cross_field_p90"], cal["same_field_p25"]
-    tau = float(np.clip((lo + hi) / 2, 0.5, 0.85)) if hi > lo else 0.7
-    print(f"tau={tau:.3f}  calibration={cal}")
+    tau = validate.choose_tau(E, target_median=25)
+    print(f"tau={tau} (mean-centered)")
     m = metric.compute_metrics(E, years, tau=tau)
 
     top_pioneers_table(m, meta, tag)
