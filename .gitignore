@@ -9,3 +9,5 @@ data/embeddings/
 results/*.log
 results/metrics_*.jsonl
 .DS_Store
+.env
+.env.*
