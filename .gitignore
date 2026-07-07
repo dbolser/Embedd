@@ -11,3 +11,6 @@ results/metrics_*.jsonl
 .DS_Store
 .env
 .env.*
+
+# focused topic queries kept local (out of the public repo)
+topics.local.json

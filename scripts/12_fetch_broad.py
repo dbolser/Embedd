@@ -1,10 +1,10 @@
 """Broad corpus for the concept-relation / moves-of-science analysis:
   * ~200k outcome-blind random abstracts (breadth), sampled by date only, plus
-  * ALL phosphodiesterase (PDE) papers, and
-  * ALL amyotrophic lateral sclerosis (ALS) papers   [nods to the day job].
+  * every paper for any focused topic defined in `topics.local.json` (untracked),
+    each as {"name": "<pubmed query>"} -- so no specific domains live in the repo.
 
 Written to data/raw_broad/*.jsonl so it stays separate from the pilot corpus.
-Resumable: each field's file is skipped if already complete.
+Resumable: each file is skipped if already complete.
 """
 from __future__ import annotations
 
@@ -25,10 +25,10 @@ RANDOM_TARGET = 200_000
 BROAD = '(hasabstract[text] AND English[lang] AND "journal article"[pt])'
 QUARTERS = [("01", "03"), ("04", "06"), ("07", "09"), ("10", "12")]
 
-TOPICS = {
-    "pde": '("Phosphoric Diester Hydrolases"[MeSH] OR "phosphodiesterase"[tiab] OR "phosphodiesterases"[tiab])',
-    "als": '("Amyotrophic Lateral Sclerosis"[MeSH] OR "amyotrophic lateral sclerosis"[tiab] OR "motor neuron disease"[tiab])',
-}
+# Focused topic queries are kept out of the repo; define them in an untracked
+# topics.local.json at the project root, e.g. {"topic_a": "<pubmed query>"}.
+_topics_file = C.ROOT / "topics.local.json"
+TOPICS = json.loads(_topics_file.read_text()) if _topics_file.exists() else {}
 
 
 def esearch_window(term, retmax, sort="pub_date", datestr=None):

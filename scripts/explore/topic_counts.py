@@ -1,6 +1,8 @@
-"""Check PubMed hit counts for candidate PDE / ALS queries so we can size the
-broad corpus before fetching. Throwaway."""
+"""Check PubMed hit counts for the focused topic queries (from the untracked
+topics.local.json) so we can size the broad corpus before fetching. Throwaway."""
 from __future__ import annotations
+
+import json
 
 from Bio import Entrez
 
@@ -9,15 +11,8 @@ from embedd import fetch  # noqa: F401 (sets Entrez.email)
 
 Entrez.email = C.ENTREZ_EMAIL
 
-QUERIES = {
-    "PDE phosphodiesterase (MeSH+tiab)":
-        '"Phosphoric Diester Hydrolases"[MeSH] OR "phosphodiesterase"[tiab] OR "phosphodiesterases"[tiab]',
-    "PDE acronym only":
-        '"PDE"[tiab]',
-    "ALS (MeSH)": '"Amyotrophic Lateral Sclerosis"[MeSH]',
-    "ALS (MeSH+tiab+MND)":
-        '"Amyotrophic Lateral Sclerosis"[MeSH] OR "amyotrophic lateral sclerosis"[tiab] OR "motor neuron disease"[tiab]',
-}
+_topics_file = C.ROOT / "topics.local.json"
+QUERIES = json.loads(_topics_file.read_text()) if _topics_file.exists() else {}
 
 
 def count(term):
@@ -28,5 +23,7 @@ def count(term):
 
 
 if __name__ == "__main__":
+    if not QUERIES:
+        print("No topics.local.json found — define {\"name\": \"<pubmed query>\"} there.")
     for name, q in QUERIES.items():
         print(f"{count(q):8d}  {name}")

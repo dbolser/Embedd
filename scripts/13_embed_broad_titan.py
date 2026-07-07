@@ -1,5 +1,5 @@
-"""Titan-embed the broad corpus (random + PDE + ALS). Resumable & checkpointed.
-Saves vecs_broad.npy + meta_broad.jsonl in data/embeddings/."""
+"""Titan-embed the broad corpus (random + any focused topic corpora). Resumable
+& checkpointed. Saves vecs_broad.npy + meta_broad.jsonl in data/embeddings/."""
 from __future__ import annotations
 
 import json
