@@ -108,6 +108,30 @@ def relation_vectors(clusters: list[Cluster]):
     return np.array(pairs), diffs, units
 
 
+def analogy_map(clusters: list[Cluster], src_i: int, dst_i: int,
+                tol_frac: float = 0.5):
+    """Seeded analogy probe. Given a move v = c[dst] - c[src], find every cluster
+    C whose image C+v lands nearest to a real, distinct cluster D (within
+    tol_frac * |v|). Returns list of (C_idx, D_idx, dist/|v|) — the pairs the
+    move 'explains'. This is the word2vec-style test: does one transformation
+    generalize across domains?"""
+    from scipy.spatial.distance import cdist
+
+    C = np.stack([cl.centroid for cl in clusters])
+    v = C[dst_i] - C[src_i]
+    vn = np.linalg.norm(v) + 1e-12
+    pred = C + v
+    Dp = cdist(pred, C)
+    np.fill_diagonal(Dp, np.inf)
+    out = []
+    for a in range(len(clusters)):
+        b = int(Dp[a].argmin())
+        rel = Dp[a, b] / vn
+        if b != a and rel < tol_frac:
+            out.append((a, b, round(float(rel), 3)))
+    return sorted(out, key=lambda x: x[2])
+
+
 def cluster_relations(pairs: np.ndarray, units: np.ndarray,
                       min_cluster_size: int = 6, min_samples: int = 3,
                       min_distinct: int = 4):
