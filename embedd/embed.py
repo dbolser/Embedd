@@ -122,14 +122,18 @@ _JUNK_TITLE = re.compile(
 
 
 def _abstract_lengths() -> dict[str, int]:
-    """Map pmid -> abstract word count, read once from all raw files."""
+    """Map pmid -> abstract word count, read from every raw corpus dir."""
     lengths: dict[str, int] = {}
-    for f in C.RAW.glob("*.jsonl"):
-        for line in f.read_text().splitlines():
-            if not line.strip():
-                continue
-            r = json.loads(line)
-            lengths[r["pmid"]] = len(r.get("abstract", "").split())
+    raw_dirs = [C.RAW, C.DATA / "raw_broad"]
+    for d in raw_dirs:
+        if not d.exists():
+            continue
+        for f in d.glob("*.jsonl"):
+            for line in f.read_text().splitlines():
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                lengths[r["pmid"]] = len(r.get("abstract", "").split())
     return lengths
 
 

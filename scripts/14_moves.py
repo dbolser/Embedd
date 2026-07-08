@@ -22,9 +22,11 @@ from embedd import concepts, embed
 def load_centered(tag):
     E = np.load(C.EMBEDDINGS / f"vecs_{tag}.npy")
     meta = [json.loads(l) for l in (C.EMBEDDINGS / f"meta_{tag}.jsonl").read_text().splitlines()]
-    # drop junk, mean-center (reuse the pilot cleaner via titles/lengths if present)
-    keep = embed.clean_mask(meta)
+    # drop failed embeds (zero rows) and non-research junk, then mean-center
+    norms = np.linalg.norm(E, axis=1)
+    keep = (norms > 1e-6) & embed.clean_mask(meta)
     E, meta = E[keep], [m for m, k in zip(meta, keep) if k]
+    print(f"kept {len(meta)} rows (dropped zero/junk)", flush=True)
     E = embed.center_unit(E)
     return E, meta
 

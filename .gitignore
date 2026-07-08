@@ -14,3 +14,7 @@ results/metrics_*.jsonl
 
 # focused topic queries kept local (out of the public repo)
 topics.local.json
+
+# broad-corpus results contain the focused domains — keep local
+results/moves_broad.*
+results/*broad*
