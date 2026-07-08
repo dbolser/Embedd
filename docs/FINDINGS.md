@@ -78,11 +78,31 @@ Spearman(precedence, RCR) is only **+0.13 to +0.23** within field — precedence
 - `fillin_local.png` — per-field temporal fill-in (founder years dashed).
 - `landscape_local.png`, `concept_map_local.png` — the embedding landscape.
 
+## Update — scaling & the "moves of science" test (session 2)
+
+**Scaled to a broad corpus (~272k abstracts, Titan embeddings)** and ran the
+concept-relation analysis properly — including the fix of UMAP-reducing the
+relation vectors before HDBSCAN (they were being clustered in full 768/1024-dim,
+the curse-of-dimensionality trap).
+
+- The fix **worked as a method improvement**: relation-group coherence rose from
+  ~0.35 to **~0.65–0.71**. The difference vectors do cluster cleanly now.
+- But the coherent groups are **topic geography, not reusable operations** — they
+  are within/between the big domains (one domain's sub-clusters pointing at
+  another's), not one transformation shared across *unrelated* domains.
+- Two causes: (a) the endpoint-diversity guard is **fooled by domain size** (a big
+  domain fragments into many sub-clusters, trivially clearing "≥4 distinct
+  src/dst"); (b) the **corpus shape is wrong** — two huge domains + 200k random
+  spread thin (52% noise). Analogies need *many matched medium domains*.
+- **Verdict:** reusable "moves of science" do **not** fall out of unsupervised
+  difference-clustering, even at scale with the right reduction. Next tool is the
+  *seeded* probe (`concepts.analogy_map`) over a corpus of matched domain pairs.
+
+**Now building a canonical dataset** (`docs/TODO.md`): 294,053 unique abstracts,
+embedded row-aligned with PubMedBERT + Titan + OpenAI, so we can test whether the
+precedence/forecast signal is robust across embedding models.
+
 ## Suggested next steps
-1. Scale the outcome-blind forecast (bigger random corpus, more decision years,
-   proper temporal CV) — this is the paper's spine.
-2. Add the OpenAI text-embedding-3-large cross-check (robustness to model).
-3. Try to beat momentum: predict who *outgrows* their trajectory (residual
-   target) — the genuine "spot them before anyone else" claim.
-4. Patents: cleaner prior-art semantics + economic ground truth (your repos).
-5. Concept-relations on a broad corpus to chase the "genome-wide-ization" vector.
+See `docs/TODO.md` for the full roadmap. Headline: cross-model robustness of the
+precedence signal on the canonical dataset (the paper's spine); seeded analogy
+probes for the moves idea; beat the momentum baseline; patents; ANN for >1M.
