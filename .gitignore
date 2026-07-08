@@ -2,9 +2,19 @@
 __pycache__/
 *.pyc
 data/raw/*.jsonl
-data/embeddings/*.npy
-data/embeddings/*.jsonl
-data/embeddings/*.json
+data/raw_broad/
+data/**/*.jsonl
+data/embeddings/
+*.memmap
 results/*.log
 results/metrics_*.jsonl
 .DS_Store
+.env
+.env.*
+
+# focused topic queries kept local (out of the public repo)
+topics.local.json
+
+# broad-corpus results contain the focused domains — keep local
+results/moves_broad.*
+results/*broad*

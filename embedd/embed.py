@@ -106,3 +106,70 @@ def load_embeddings(tag: str = "local") -> tuple[np.ndarray, list[dict]]:
     vecs = np.load(C.EMBEDDINGS / f"vecs_{tag}.npy")
     meta = [json.loads(l) for l in (C.EMBEDDINGS / f"meta_{tag}.jsonl").read_text().splitlines()]
     return vecs, meta
+
+
+# Non-research editorial content that pollutes the background/random samples:
+# errata, corrections, news, obituaries, tables of contents, etc. These embed
+# into generic hubs and masquerade as pioneers.
+import re  # noqa: E402
+
+_JUNK_TITLE = re.compile(
+    r"\b(erratum|corrigendum|correction|retraction|withdrawn|editorial|"
+    r"reply|response to|comment on|book review|obituary|in memoriam|"
+    r"readers? panel|information exchange|table of contents|contents|"
+    r"announcement|news|not available|proceedings of|abstracts? of the)\b",
+    re.I)
+
+
+def _abstract_lengths() -> dict[str, int]:
+    """Map pmid -> abstract word count, read from every raw corpus dir."""
+    lengths: dict[str, int] = {}
+    raw_dirs = [C.RAW, C.DATA / "raw_broad"]
+    for d in raw_dirs:
+        if not d.exists():
+            continue
+        for f in d.glob("*.jsonl"):
+            for line in f.read_text().splitlines():
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                lengths[r["pmid"]] = len(r.get("abstract", "").split())
+    return lengths
+
+
+def clean_mask(meta: list[dict], min_words: int = 40) -> np.ndarray:
+    """Boolean mask of research-grade records: a real abstract and a non-junk
+    title. Ground-truth founders are always kept."""
+    lengths = _abstract_lengths()
+    keep = np.ones(len(meta), dtype=bool)
+    for i, m in enumerate(meta):
+        if m.get("is_founder"):
+            continue
+        if lengths.get(m["pmid"], 0) < min_words:
+            keep[i] = False
+        elif _JUNK_TITLE.search(m.get("title", "")):
+            keep[i] = False
+    return keep
+
+
+def center_unit(E: np.ndarray) -> np.ndarray:
+    """Mean-center then re-normalize. Sentence-embedding spaces are anisotropic
+    (every pair sits at high cosine); subtracting the global mean removes the
+    dominant shared component so cosine becomes discriminative. Empirically this
+    separates same-field from cross-field pairs far better than the raw space."""
+    Ec = E - E.mean(0, keepdims=True)
+    Ec /= np.linalg.norm(Ec, axis=1, keepdims=True) + 1e-12
+    return Ec.astype(np.float32)
+
+
+def load_clean(tag: str = "local", min_words: int = 40, center: bool = True):
+    """load_embeddings + drop non-research junk (keeps founders) + mean-center."""
+    E, meta = load_embeddings(tag)
+    keep = clean_mask(meta, min_words)
+    E2 = E[keep]
+    meta2 = [m for m, k in zip(meta, keep) if k]
+    if center:
+        E2 = center_unit(E2)
+    print(f"clean_mask[{tag}]: kept {keep.sum()}/{len(meta)} "
+          f"({100*keep.mean():.1f}%){' [mean-centered]' if center else ''}")
+    return E2, meta2

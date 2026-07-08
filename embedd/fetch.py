@@ -124,15 +124,34 @@ def _parse_article(art) -> dict | None:
         return None
 
 
+def _efetch_read(chunk: list[str], tries: int = 5):
+    """efetch + read as one retried unit. Network hiccups (IncompleteRead) can
+    fire during read, not just the request, so both must be inside the retry.
+    Returns None if the batch keeps failing (caller skips it rather than crash)."""
+    last = None
+    for i in range(tries):
+        try:
+            handle = Entrez.efetch(db="pubmed", id=",".join(chunk),
+                                   rettype="xml", retmode="xml")
+            records = Entrez.read(handle)
+            handle.close()
+            return records
+        except Exception as e:  # noqa: BLE001 - IncompleteRead, HTTP, parse errors
+            last = e
+            time.sleep(2.0 * (i + 1))
+    print(f"  [efetch] skipping batch of {len(chunk)} after {tries} tries: "
+          f"{type(last).__name__}", flush=True)
+    return None
+
+
 def efetch_records(pmids: list[str], batch: int = 200):
-    """Yield normalized records for a list of PMIDs."""
+    """Yield normalized records for a list of PMIDs. Never raises on network
+    errors; a persistently failing batch is skipped."""
     for i in range(0, len(pmids), batch):
         chunk = pmids[i : i + batch]
-        handle = _retry(
-            Entrez.efetch, db="pubmed", id=",".join(chunk), rettype="xml", retmode="xml"
-        )
-        records = Entrez.read(handle)
-        handle.close()
+        records = _efetch_read(chunk)
+        if records is None:
+            continue
         for art in records.get("PubmedArticle", []):
             rec = _parse_article(art)
             if rec is not None:

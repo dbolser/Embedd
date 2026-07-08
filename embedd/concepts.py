@@ -108,17 +108,54 @@ def relation_vectors(clusters: list[Cluster]):
     return np.array(pairs), diffs, units
 
 
+def analogy_map(clusters: list[Cluster], src_i: int, dst_i: int,
+                tol_frac: float = 0.5):
+    """Seeded analogy probe. Given a move v = c[dst] - c[src], find every cluster
+    C whose image C+v lands nearest to a real, distinct cluster D (within
+    tol_frac * |v|). Returns list of (C_idx, D_idx, dist/|v|) — the pairs the
+    move 'explains'. This is the word2vec-style test: does one transformation
+    generalize across domains?"""
+    from scipy.spatial.distance import cdist
+
+    C = np.stack([cl.centroid for cl in clusters])
+    v = C[dst_i] - C[src_i]
+    vn = np.linalg.norm(v) + 1e-12
+    pred = C + v
+    Dp = cdist(pred, C)
+    np.fill_diagonal(Dp, np.inf)
+    out = []
+    for a in range(len(clusters)):
+        b = int(Dp[a].argmin())
+        rel = Dp[a, b] / vn
+        if b != a and rel < tol_frac:
+            out.append((a, b, round(float(rel), 3)))
+    return sorted(out, key=lambda x: x[2])
+
+
 def cluster_relations(pairs: np.ndarray, units: np.ndarray,
                       min_cluster_size: int = 6, min_samples: int = 3,
-                      min_distinct: int = 4):
-    """Cluster relation *directions*. Return groups that pass the endpoint-
-    diversity guard (>= min_distinct distinct sources AND destinations)."""
+                      min_distinct: int = 4, reduce_dims: int | None = 15):
+    """Cluster relation vectors. Return groups that pass the endpoint-diversity
+    guard (>= min_distinct distinct sources AND destinations).
+
+    HDBSCAN on the full 768/1024-dim vectors suffers the curse of dimensionality
+    (distances concentrate, everything collapses into one blob). So by default we
+    UMAP-reduce the relation vectors to `reduce_dims` first, then cluster there;
+    coherence is still measured in the original space so it stays meaningful.
+    """
     import hdbscan
 
-    # cosine on unit vectors == euclidean geometry on the sphere; use euclidean
+    if reduce_dims and units.shape[1] > reduce_dims and len(units) > reduce_dims + 2:
+        import umap
+        space = umap.UMAP(n_components=reduce_dims,
+                          n_neighbors=min(30, len(units) - 1),
+                          min_dist=0.0, metric="cosine",
+                          random_state=42).fit_transform(units)
+    else:
+        space = units
     clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size,
                                 min_samples=min_samples, metric="euclidean")
-    rlabels = clusterer.fit_predict(units)
+    rlabels = clusterer.fit_predict(space)
     groups = []
     for rid in sorted(set(rlabels)):
         if rid == -1:
@@ -129,6 +166,7 @@ def cluster_relations(pairs: np.ndarray, units: np.ndarray,
         diverse = len(srcs) >= min_distinct and len(dsts) >= min_distinct
         # coherence: mean pairwise cosine of the directions in this group
         U = units[idx]
+        U = U / (np.linalg.norm(U, axis=1, keepdims=True) + 1e-12)
         coh = float((U @ U.T).mean())
         groups.append({
             "rid": int(rid), "size": int(len(idx)),

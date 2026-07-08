@@ -10,17 +10,12 @@ from embedd import embed, metric, validate
 
 
 def main(tag: str = "local") -> None:
-    E, meta = embed.load_embeddings(tag)
+    E, meta = embed.load_clean(tag)
     years = np.array([m["year"] for m in meta])
     print(f"loaded {E.shape} embeddings, years {years.min()}-{years.max()}")
 
-    cal = validate.calibrate_tau(E, meta)
-    print("tau calibration:", json.dumps(cal, indent=2))
-    # pick tau midway between cross-field p90 and same-field p25, clamped
-    lo = cal["cross_field_p90"]
-    hi = cal["same_field_p25"]
-    tau = float(np.clip((lo + hi) / 2, 0.5, 0.85)) if hi > lo else 0.7
-    print(f"chosen tau = {tau:.3f}")
+    tau = validate.choose_tau(E, target_median=25)
+    print(f"chosen tau = {tau} (mean-centered, ~25 median neighbors)")
 
     m = metric.compute_metrics(E, years, tau=tau)
     comp = validate.metric_comparison(m, meta)
